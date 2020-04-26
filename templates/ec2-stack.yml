@@ -1,0 +1,115 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Templates that creates an EC2 Instance
+
+Parameters:
+  prefix:
+    Type: String
+    Description: Prefix name for the resources
+    Default: oswc
+  instanceType:
+    Type: String
+    Description: EC2 Instance Type
+  subnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: Subnet where the EC2 will be located
+  securityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: EC2 Security Group
+
+# Amazon Linux 2 AMI ID Mapping (https://aws.amazon.com/amazon-linux-2/release-notes/) 
+Mappings:
+  AWSRegionToAMI:
+    eu-west-2:
+      AMIID: ami-0d8e27447ec2c8410
+    ca-central-1:
+      AMIID: ami-0d4ae09ec9361d8ac
+    us-west-2:
+      AMIID: ami-082b5a644766e0e6f
+    ap-east-1:
+      AMIID: ami-570c7726
+    us-east-2:
+      AMIID: ami-0d8f6eb4f641ef691
+    us-east-1:
+      AMIID: ami-0b898040803850657
+    us-west-1:
+      AMIID: ami-056ee704806822732
+    sa-east-1:
+      AMIID: ami-058943e7d9b9cabfb 
+    eu-west-3:
+      AMIID: ami-0adcddd3324248c4c
+    eu-central-1:
+      AMIID: ami-0cc293023f983ed53
+    eu-west-1:
+      AMIID: ami-0bbc25e23a7640b9b
+    ap-northeast-2:
+      AMIID: ami-095ca789e0549777d
+    ap-northeast-1:
+      AMIID: ami-0c3fd0f5d33134a76
+    ap-south-1:
+      AMIID: ami-0d2692b6acea72ee6
+    ap-southeast-2:
+      AMIID: ami-0dc96254d5535925f
+    ap-southeast-2:
+      AMIID: ami-0dc96254d5535925f
+    eu-north-1:
+      AMIID: ami-3f36be41
+    ap-northeast-3:
+      AMIID: ami-0ee933a7f81beb045
+    ap-southeast-1:
+      AMIID: ami-01f7527546b557442
+    cn-north-1:
+      AMIID: ami-08b835182371dee58
+    cn-northwest-1:
+      AMIID: ami-0829e595217a759b9
+    us-gov-west-1:
+      AMIID: ami-e9a9d388
+    us-gov-east-1:
+      AMIID: ami-a2d938d3
+
+Resources:
+  EC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join ['-', [!Ref prefix, 'ec2-role' ]]
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: [ec2.amazonaws.com]
+          Action: ['sts:AssumeRole']
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+  
+  EC2AccessProfile:
+    Type: AWS::IAM::InstanceProfile
+    DependsOn: 
+      - EC2Role
+    Properties:
+      Path: /
+      Roles: 
+        - !Ref EC2Role
+
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    DependsOn: 
+      - EC2AccessProfile
+    Properties:
+      ImageId: !FindInMap [AWSRegionToAMI, !Ref 'AWS::Region', AMIID]
+      InstanceType: !Ref instanceType
+      IamInstanceProfile: !Ref EC2AccessProfile
+      NetworkInterfaces:
+        - DeviceIndex: "0"
+          AssociatePublicIpAddress: true
+          SubnetId: !Ref subnetId
+          GroupSet: 
+            - !Ref securityGroupId
+      BlockDeviceMappings:
+        - DeviceName: "/dev/xvda"
+          Ebs:
+            VolumeSize: 8
+            VolumeType: gp2
+            DeleteOnTermination: true   
+      Tags:
+        - Key: 'Name'
+          Value: 'EC2Instance'

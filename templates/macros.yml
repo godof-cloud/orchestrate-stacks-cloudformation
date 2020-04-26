@@ -1,0 +1,92 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: >
+  Template that creates Macros
+
+Parameters:
+  prefix:
+    Type: String
+    Description: Prefix name for the resources
+    Default: oswc
+  resourcesBucket:
+    Type: String
+    Description: Resources bucket where the lambda functions is
+  lambdaBucketKey:
+    Type: String
+    Description: Bucket prefix path where the lambda tags functions is stored
+
+Resources:
+  LambdaTagsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join ['-', [!Ref prefix, 'lambda-tags-role']]
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: [lambda.amazonaws.com]
+          Action: ['sts:AssumeRole']
+      Path: /
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+
+  LambdaTags:
+    Type: AWS::Lambda::Function
+    DependsOn: [ LambdaTagsRole ]
+    Properties:
+      FunctionName: !Join ['-', [!Ref prefix, 'lambda-tags'] ]
+      Description: Lambda function that transforms the tags received by parameters
+      Handler: cloud.godof.lambda.tags.Handler
+      Role: !GetAtt LambdaTagsRole.Arn
+      Code:
+        S3Bucket: !Ref resourcesBucket
+        S3Key: !Ref lambdaBucketKey
+      Runtime: "java8"
+      Timeout: 30
+      MemorySize: 128
+      ReservedConcurrentExecutions: 1
+  
+  MacroLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties: 
+      RetentionInDays: 30
+
+  MacroRole:
+    Type: "AWS::IAM::Role"
+    Properties: 
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement: 
+          - 
+            Effect: Allow
+            Principal: 
+              Service: 
+                - cloudformation.amazonaws.com
+            Action: 
+              - sts:AssumeRole
+      Path: /
+
+  CloudWatchLogsPolicy:
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyName: CfnMacroCloudwatchPolicy
+      PolicyDocument: 
+        Version: 2012-10-17
+        Statement: 
+          - 
+            Effect: Allow
+            Action: 
+              - logs:*
+            Resource: 'arn:aws:logs:*:*:*'
+      Roles: 
+        - !Ref MacroRole
+
+  MacroTags:
+      Type: AWS::CloudFormation::Macro
+      DependsOn: [ LambdaTags ]
+      Properties:
+        Name: 'tags'
+        Description: "Add the tags in the resources"
+        FunctionName: !Ref LambdaTags
+        LogGroupName: !Ref MacroLogGroup
+        LogRoleARN: !GetAtt MacroRole.Arn

@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Transform:
+  - tags
+
+Description: >
+  Master Template that orchestrates other stacks
+
+Parameters:
+  prefix:
+    Type: String
+    Description: Prefix name for the resources
+    Default: oswc
+  templateURL:
+    Type: String
+    Description: Bucket path where the templates are, from example https://mybucket.s3.us-east-1.amazonaws.com/templates
+  vpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC Identifier
+  instanceType:
+    Type: String
+    Description: EC2 Instance Type
+    AllowedValues: ['t2.micro', 't2.small']
+    Default: 't2.micro'
+  subnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: Subnet where the EC2 will be located
+  tags:
+    Type: String
+    Description: Tag list Key=Value separated by commas
+    Default: 'application=Orchestrate Stacks,author=GodOfCloud'
+
+Resources:
+  SecurityGroupsStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Join ['/', [!Ref templateURL, 'security-group-stack.yml' ] ]
+      Parameters:
+        prefix: !Ref prefix
+        vpcId: !Ref vpcId
+
+  EC2Stack:
+    DependsOn: 
+      - SecurityGroupsStack
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Join ['/', [!Ref templateURL, 'ec2-stack.yml' ] ]
+      Parameters:
+        prefix: !Ref prefix
+        instanceType: !Ref instanceType
+        subnetId: !Ref subnetId
+        securityGroupId: !GetAtt SecurityGroupsStack.Outputs.SecurityGroupId

@@ -1,0 +1,32 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Templates that creates the Security Group
+
+Parameters:
+  prefix:
+    Type: String
+    Description: Prefix name for the resources
+    Default: oswc
+  vpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC Identifier
+
+Resources:
+  ExampleSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName:  !Join ['-', [!Ref prefix, 'example-sg']]
+      GroupDescription: Example Security Group to allow Access to SSH
+      VpcId: !Ref vpcId
+      SecurityGroupIngress:
+        - Description: Allow SSH
+          IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0      
+
+Outputs:
+  SecurityGroupId:
+    Value: !Ref ExampleSecurityGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-example-sg"
