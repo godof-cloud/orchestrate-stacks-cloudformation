@@ -5,23 +5,23 @@ package cloud.godof.lambda.tags.exception;
  * @author aguilar
  *
  */
-public class MacroTagsException extends RuntimeException {
+public class TagsException extends RuntimeException {
 
 	private static final long serialVersionUID = -788689540860979324L;
 
-	public MacroTagsException() {
+	public TagsException() {
 		super();
 	}
 
-	public MacroTagsException(String message, Throwable cause) {
+	public TagsException(String message, Throwable cause) {
 		super(message, cause);
 	}
 
-	public MacroTagsException(String message) {
+	public TagsException(String message) {
 		super(message);
 	}
 	
-	public MacroTagsException(Throwable cause) {
+	public TagsException(Throwable cause) {
 		super(cause);
 	}
 	

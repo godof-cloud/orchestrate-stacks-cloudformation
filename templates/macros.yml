@@ -14,6 +14,7 @@ Parameters:
   lambdaBucketKey:
     Type: String
     Description: Bucket prefix path where the lambda tags functions is stored
+    Default: artifacts/lambda-tags.jar
 
 Resources:
   LambdaTagsRole:
@@ -46,47 +47,16 @@ Resources:
       MemorySize: 128
       ReservedConcurrentExecutions: 1
   
-  MacroLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties: 
-      RetentionInDays: 30
-
-  MacroRole:
-    Type: "AWS::IAM::Role"
-    Properties: 
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement: 
-          - 
-            Effect: Allow
-            Principal: 
-              Service: 
-                - cloudformation.amazonaws.com
-            Action: 
-              - sts:AssumeRole
-      Path: /
-
-  CloudWatchLogsPolicy:
-    Type: "AWS::IAM::Policy"
-    Properties:
-      PolicyName: CfnMacroCloudwatchPolicy
-      PolicyDocument: 
-        Version: 2012-10-17
-        Statement: 
-          - 
-            Effect: Allow
-            Action: 
-              - logs:*
-            Resource: 'arn:aws:logs:*:*:*'
-      Roles: 
-        - !Ref MacroRole
-
   MacroTags:
       Type: AWS::CloudFormation::Macro
       DependsOn: [ LambdaTags ]
       Properties:
-        Name: 'tags'
+        Name: !Sub '${prefix}-tags'
         Description: "Add the tags in the resources"
         FunctionName: !Ref LambdaTags
-        LogGroupName: !Ref MacroLogGroup
-        LogRoleARN: !GetAtt MacroRole.Arn
+
+Outputs:
+  MacroName:
+    Value: !Ref MacroTags
+    Export:
+      Name: !Sub "${AWS::StackName}-macro-name"

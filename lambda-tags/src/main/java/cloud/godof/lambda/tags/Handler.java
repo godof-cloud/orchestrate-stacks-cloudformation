@@ -12,7 +12,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import cloud.godof.lambda.tags.exception.MacroTagsException;
+import cloud.godof.lambda.tags.exception.TagsException;
 import cloud.godof.lambda.tags.utils.Constants;
 
 public class Handler implements RequestHandler<Map<String, Object>, Map<String, Object>> {
@@ -53,7 +53,7 @@ public class Handler implements RequestHandler<Map<String, Object>, Map<String, 
 			
 			logger.log("Response: " + mapper.writeValueAsString(responseMap));
 		} catch (JsonProcessingException e) {
-			throw new MacroTagsException("There was an error converting the tags into JSON");
+			throw new TagsException("There was an error converting the tags into JSON");
 		}
         
 		return responseMap;
@@ -83,7 +83,7 @@ public class Handler implements RequestHandler<Map<String, Object>, Map<String, 
 		String[] tagSegments = paramTags.split(",");
 		
 		if (tagSegments.length > Constants.CLOUDFORMATION_TAGS_LIMIT) {
-			throw new MacroTagsException("A maximum number of 50 tags can be specified");
+			throw new TagsException("A maximum number of 50 tags can be specified");
 		}
 		
 		for (int i = 0; i < tagSegments.length; i++) {
