@@ -51,7 +51,7 @@ Resources:
       Type: AWS::CloudFormation::Macro
       DependsOn: [ LambdaTags ]
       Properties:
-        Name: !Sub '${prefix}-tags'
+        Name: 'tags'
         Description: "Add the tags in the resources"
         FunctionName: !Ref LambdaTags
 
